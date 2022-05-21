@@ -9,3 +9,7 @@ class DbUser(BaseModel):
     is_active = Column(Boolean(), default=True)
     is_superuser = Column(Boolean(), default=False)
     user_profile = relationship("DbUserProfile", back_populates="user")
+    cart = relationship("DbCart", back_populates="user")
+    order = relationship("DbOrder", back_populates="user")
+
+

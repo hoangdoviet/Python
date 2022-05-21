@@ -13,6 +13,9 @@ poetry shell
 ```
 
 ```
+alembic stamp head
 alembic revision --autogenerate -m "update db" 
+alembic upgrade head
+
 ```
 
