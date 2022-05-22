@@ -95,9 +95,7 @@ def update_product(
                 message="The Categories  does not exist in the system",
             )
         category.append(cat)
-    product_in.categories = category
-    for item in product_in.categories:
-        print(item.name)
+    crud.product.create_product_categories(db,product_id=product.id,cat= category)
     product = crud.product.update(db, db_obj=product, obj_in=product_in)
     return DataResponse().success_response(request, product)
 

@@ -14,7 +14,7 @@ from app.schemas.product import ProductUpdate, ProductCreate, ProductDelete
 
 class CRUDProduct(CRUDBase[DbProduct, ProductCreate, ProductUpdate]):
 
-    def create(self, db: Session, *, obj_in: ProductCreate, user: DbUser, cat: List[DbCategories] ) -> DbProduct:
+    def create(self, db: Session, *, obj_in: ProductCreate, user: DbUser, cat: List[DbCategories]) -> DbProduct:
         db_obj = DbProduct(
             name=obj_in.name,
             price=obj_in.price,
@@ -39,8 +39,24 @@ class CRUDProduct(CRUDBase[DbProduct, ProductCreate, ProductUpdate]):
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
     def get_by_name(self, db: Session, *, name: str) -> Optional[DbProduct]:
-        return db.query(DbProduct).filter(DbProduct.name == name)\
+        return db.query(DbProduct).filter(DbProduct.name == name) \
             .filter(DbProduct.deleted == "false").first()
+
+    def create_product_categories(
+            self, db: Session, *,  product_id: uuid,
+            cat: List[DbCategories]
+    ) -> DbProductCategories:
+        for item in db.query(DbProductCategories).filter(DbProductCategories.product_id == product_id):
+            db.delete(item)
+            db.commit()
+        for item in cat:
+            db_obj = DbProductCategories(
+                product_id=product_id,
+                category_id=item.id
+            )
+            db.add(db_obj)
+            db.commit()
+        return
 
     def delete(
             self, db: Session, *, db_obj: DbProduct, obj_in: Union[ProductDelete, Dict[str, Any]]
@@ -51,8 +67,6 @@ class CRUDProduct(CRUDBase[DbProduct, ProductCreate, ProductUpdate]):
             update_data = obj_in.dict(exclude_unset=True)
 
         return super().update(db, db_obj=db_obj, obj_in=update_data)
-
-
 
     # def get_product_categories(self, db: Session, *, product_id: Any) -> List[DbCategories]:
     #     categories = db.query(DbProductCategories).filter(DbProductCategories.product_id == product_id) \

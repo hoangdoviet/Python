@@ -3,7 +3,6 @@ from uuid import UUID
 from pydantic import BaseModel
 # from user import UserInDBBase
 # Shared properties
-from app import schemas
 
 
 class CategoriesBase(BaseModel):
