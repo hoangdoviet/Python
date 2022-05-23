@@ -35,7 +35,7 @@ class CRUDProduct(CRUDBase[DbProduct, ProductCreate, ProductUpdate]):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
-
+        print(db_obj.name)
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
     def get_by_name(self, db: Session, *, name: str) -> Optional[DbProduct]:

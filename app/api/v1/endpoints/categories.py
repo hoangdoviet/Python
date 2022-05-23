@@ -81,17 +81,22 @@ def update_cat(
     return DataResponse().success_response(request, category)
 
 
-@router.get("/{cat_id}", response_model=DataResponse[schemas.Categories])
+@router.get("/{cat_id}", response_model=DataResponse[schemas.CategoryProduct])
 def read_cat(
         request: Request,
         category_id: str,
         db: Session = Depends(deps.get_db),  # noqa
-        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
+        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
 ) -> Any:
     """
     Get cat by id.
     """
-    current_cat = crud.categories.get(db, id=category_id)
+    current_cat = crud.categories.get_cat_product(db, id=category_id, userid=current_user.id)
+    if not current_cat:
+        raise CustomException(
+            http_code=404,
+            message="The Category not exists in the system.",
+        )
     return DataResponse().success_response(request, current_cat)
 
 

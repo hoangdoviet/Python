@@ -49,7 +49,7 @@ def create_product(
 
     category = []
     for item in category_in:
-        cat = crud.categories.get(db, id=item)
+        cat = crud.categories.get_by_user(db, id=item, user_id=current_user.id)
         if not cat:
             raise CustomException(
                 http_code=404,
@@ -75,7 +75,7 @@ def update_product(
     """
     Update  Product.
     """
-    product = crud.product.get(db, id=product_id)
+    product = crud.product.get_by_user(db, id=product_id, user_id=current_user.id)
     if not product:
         raise CustomException(
             http_code=404,
@@ -95,7 +95,7 @@ def update_product(
                 message="The Categories  does not exist in the system",
             )
         category.append(cat)
-    crud.product.create_product_categories(db,product_id=product.id,cat= category)
+    crud.product.create_product_categories(db, product_id=product.id, cat=category)
     product = crud.product.update(db, db_obj=product, obj_in=product_in)
     return DataResponse().success_response(request, product)
 
@@ -110,8 +110,8 @@ def read_product(
     """
     Get Product by id.
     """
-    current_product = crud.product.get(db, id=product_id)
-    if current_product.created_by != str(current_user.id):
+    current_product = crud.product.get_by_user(db, id=product_id, user_id=current_user.id)
+    if not current_product:
         raise CustomException(
             http_code=404,
             message="The Product does not exist in the system",
@@ -129,9 +129,8 @@ def read_product_categories(
     """
     Get Product Categories.
     """
-    current_product = crud.product.get(db, id=product_id)
-    if current_product.created_by != str(current_user.id):
-        print(current_product.created_by)
+    current_product = crud.product.get_by_user(db, id=product_id, user_id=current_user.id)
+    if not current_product:
         raise CustomException(
             http_code=404,
             message="The Product does not exist in the system",
@@ -149,7 +148,7 @@ def read_product_discounts(
     """
     Get Product Discount.
     """
-    current_product = crud.product.get(db, id=product_id)
+    current_product = crud.product.get_by_user(db, id=product_id,user_id=current_user.id)
     if current_product.created_by != str(current_user.id):
         raise CustomException(
             http_code=404,
@@ -170,7 +169,7 @@ def delete_product(
     """
     Update  Product.
     """
-    product = crud.product.get(db, id=product_id)
+    product = crud.product.get_by_user(db, id=product_id,user_id=current_user.id)
     if not product:
         raise CustomException(
             http_code=404,

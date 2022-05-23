@@ -25,7 +25,6 @@ class ProductUpdate(ProductBase):
     name: Optional[str] = None
     price: Optional[int] = 0
     quantity: Optional[int] = 1
-    categories: List[Categories] = []
 
 
 class ProductDelete(ProductBase):

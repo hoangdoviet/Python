@@ -5,4 +5,6 @@ from .user import User, UserCreate, UserInDB, UserUpdate
 from .user_profile import UserProfile, UserProfileCreate, UserProfileUpdate, UserProfileInDB
 from .categories import Categories, CategoriesUpdate, CategoriesCreate, CategoriesInDBBase, CategoriesDelete
 from .discount import Discount, DiscountCreate, DiscountDelete, DiscountUpdate, DiscountInDBBase
-from .product import Product, ProductCreate, ProductDelete, ProductUpdate, ProductInDBBase, ProductCategories, ProductDiscount
+from .product import Product, ProductCreate, ProductDelete, ProductUpdate, ProductInDBBase, ProductCategories, \
+    ProductDiscount
+from .common import CategoryProduct, DiscountProduct
