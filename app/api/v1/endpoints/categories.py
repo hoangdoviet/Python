@@ -20,13 +20,27 @@ def read_categories(
         db: Session = Depends(deps.get_db),
         skip: int = 0,
         limit: int = 100,
-        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
 ) -> Any:
     """
     Retrieve Discount.
     """
 
     categories = crud.categories.get_multi(db, skip=skip, limit=limit)
+
+    return DataResponse().success_response(request, categories)
+@router.get("/me", response_model=DataResponse[List[schemas.Categories]])
+def super_user_read_categories(
+        request: Request,
+        db: Session = Depends(deps.get_db),
+        skip: int = 0,
+        limit: int = 100,
+        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
+) -> Any:
+    """
+    Retrieve Discount.
+    """
+
+    categories = crud.categories.get_multi_by_user(db, skip=skip, limit=limit,user=current_user)
 
     return DataResponse().success_response(request, categories)
 
@@ -80,13 +94,29 @@ def update_cat(
     category = crud.categories.update(db, db_obj=cat, obj_in=category_in)
     return DataResponse().success_response(request, category)
 
-
 @router.get("/{cat_id}", response_model=DataResponse[schemas.CategoryProduct])
 def read_cat(
         request: Request,
         category_id: str,
         db: Session = Depends(deps.get_db),  # noqa
-        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+) -> Any:
+    """
+    Get cat by id.
+    """
+    current_cat = crud.categories.get(db, id=category_id)
+    if not current_cat:
+        raise CustomException(
+            http_code=404,
+            message="The Category not exists in the system.",
+        )
+    return DataResponse().success_response(request, current_cat)
+
+@router.get("/me/{cat_id}", response_model=DataResponse[schemas.CategoryProduct])
+def super_user_read_cat(
+        request: Request,
+        category_id: str,
+        db: Session = Depends(deps.get_db),  # noqa
+        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
 ) -> Any:
     """
     Get cat by id.

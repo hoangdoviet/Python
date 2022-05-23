@@ -20,7 +20,26 @@ def read_discount(
         db: Session = Depends(deps.get_db),
         skip: int = 0,
         limit: int = 100,
-        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+) -> Any:
+    """
+    Retrieve Discount.
+    """
+
+    discount = crud.discount.get_multi(db, skip=skip, limit=limit)
+    if not discount:
+        raise CustomException(
+            http_code=404,
+            message="The Discount already exists in the system.",
+        )
+    return DataResponse().success_response(request, discount)
+
+@router.get("/me", response_model=DataResponse[List[schemas.Discount]])
+def super_user_read_discounts(
+        request: Request,
+        db: Session = Depends(deps.get_db),
+        skip: int = 0,
+        limit: int = 100,
+        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
 ) -> Any:
     """
     Retrieve Discount.
@@ -33,8 +52,6 @@ def read_discount(
             message="The Discount already exists in the system.",
         )
     return DataResponse().success_response(request, discount)
-
-
 @router.post("/open", response_model=DataResponse[schemas.DiscountProduct])
 def create_discount(
         *,
@@ -42,7 +59,7 @@ def create_discount(
         db: Session = Depends(deps.get_db),
         discount_in: schemas.DiscountCreate,
         products: List[str],
-        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
 
 ) -> Any:
     """
@@ -74,7 +91,7 @@ def update_discount(
         discount_id: str,
         discount_in: schemas.DiscountUpdate,
         products: List[str],
-        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
 ) -> Any:
     """
     Update  discount.
@@ -106,11 +123,28 @@ def update_discount(
 
 
 @router.get("/{discount_id}", response_model=DataResponse[schemas.DiscountProduct])
-def read_discount(
+def read_discount_by_id(
         request: Request,
         discount_id: str,
         db: Session = Depends(deps.get_db),  # noqa
-        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+) -> Any:
+    """
+    Get discount by id.
+    """
+    current_discount = crud.discount.get(db, id=discount_id)
+    if not current_discount:
+        raise CustomException(
+            http_code=404,
+            message="The Discount does not exists in the system.",
+        )
+    return DataResponse().success_response(request, current_discount)
+
+@router.get("/me/{discount_id}", response_model=DataResponse[schemas.DiscountProduct])
+def super_user_read_discount_by_id(
+        request: Request,
+        discount_id: str,
+        db: Session = Depends(deps.get_db),  # noqa
+        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
 ) -> Any:
     """
     Get discount by id.
@@ -123,7 +157,6 @@ def read_discount(
         )
     return DataResponse().success_response(request, current_discount)
 
-
 @router.delete("/{discount_id}")
 def delete_discount(
         *,
@@ -131,7 +164,7 @@ def delete_discount(
         db: Session = Depends(deps.get_db),
         discount_id: str,
 
-        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
 ) -> Any:
     """
     Update  Discount.
