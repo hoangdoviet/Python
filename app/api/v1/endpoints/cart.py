@@ -1,3 +1,6 @@
+import math
+import uuid
+from operator import concat
 from typing import Any, List, Union
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
@@ -9,25 +12,41 @@ from app import crud, models, schemas
 from app.api import deps
 from app.core.config import settings
 from app.core.exception_handler import CustomException
+from app.schemas import Product, Discount
 from app.schemas.base import DataResponse
 
 router = APIRouter()
 
+def sum_price(product: int, discount: int, quantity: int):
+    total = product * quantity * (1-discount/100)
+    return math.ceil(total)
 
-@router.get("", response_model=DataResponse[List[schemas.Cart]])
+@router.get("", response_model=DataResponse[schemas.UserCart])
 def read_cart(
         request: Request,
         db: Session = Depends(deps.get_db),
         skip: int = 0,
         limit: int = 100,
+        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+
 ) -> Any:
     """
     Retrieve Discount.
     """
 
-    cart = crud.cart.get_multi(db, skip=skip, limit=limit)
-
-    return DataResponse().success_response(request, cart)
+    cart = crud.cart.get_multi_by_user(db, skip=skip, limit=limit, user=current_user)
+    if not cart:
+        raise CustomException(
+            http_code=404,
+            message="%s dont have any cart" % current_user.username
+        )
+    new_cart = schemas.UserCart
+    new_cart.cart = cart
+    price = 0
+    for item in cart:
+        price += item.sum_price
+    new_cart.total_price = price
+    return DataResponse().success_response(request, new_cart)
 
 
 @router.post("/open", response_model=DataResponse[schemas.Cart])
@@ -53,76 +72,103 @@ def create_cart(
             http_code=404,
             message="The %s not enough in the system, just have %d" % (product.name, product.quantity)
         )
-    discount = None
-    for item in product.discount:
-        if item.code == cart_in.discount:
-            discount = item.id
-    if not discount:
-        raise CustomException(
-            http_code=404,
-            message="Dont Have Discount Code",
-        )
+    discount = 0
+    if cart_in.discount:
+        discount_id = None
+        for item in product.discount:
+            if item.code == cart_in.discount:
+                discount_id = item.id
+                discount = item.discount
+        if not discount_id:
+            raise CustomException(
+                http_code=404,
+                message="Dont Have Discount Code Like This",
+            )
+        cart_in.discount = discount_id
+    else:
+        cart_in.discount = None
+    cart_in.product = product.id
 
-    cart_in.discount = discount
-    exist_product = crud.cart.get_cart(db, id=current_user.id, product_id=cart_in.product)
+    exist_product = crud.cart.get_cart_product(db, id=current_user.id, product_id=cart_in.product)
+
     if exist_product:
         # update product//
+        cart_in.quantity += exist_product.quantity
+        if product.quantity < cart_in.quantity:
+            raise CustomException(
+                http_code=404,
+                message="The %s not enough in the system, just have %d" % (product.name, product.quantity)
+            )
+        total = sum_price(product=product.price, discount=discount, quantity=cart_in.quantity)
+        cart_in.sum_price = total
         cart = crud.cart.update(db, db_obj=exist_product, obj_in=cart_in)
     else:
-        cart = crud.cart.create(db, obj_in=cart_in, user=current_user)
+        total = sum_price(product=product.price, discount=discount, quantity=cart_in.quantity)
+        cart = crud.cart.create(db, obj_in=cart_in, user=current_user,total=total)
 
     return DataResponse().success_response(request, cart)
 
 
 @router.put("/{cat_id}", response_model=DataResponse[schemas.Cart])
-def update_cat(
+def update_cart(
         *,
         request: Request,
         db: Session = Depends(deps.get_db),
         cart_id: str,
         cart_in: schemas.CartUpdate,
-        current_user: models.DbUser = Depends(deps.get_current_active_superuser),  # noqa
-) -> Any:
-    """
-    Update  cart.
-    """
-    cat = crud.cart.get(db, id=cart_id)
-    if not cat:
-        raise CustomException(
-            http_code=404,
-            message="The cart  does not exist in the system",
-        )
-    exist_cat = crud.cart.get_by_name(db, name=cart_in.name)
-    if exist_cat:
-        raise CustomException(
-            http_code=404,
-            message="The cart already exists in the system.",
-        )
-    cart = crud.cart.update(db, db_obj=cat, obj_in=cart_in)
-    return DataResponse().success_response(request, cart)
-
-
-@router.delete("/me")
-def delete_cat(
-        *,
-        request: Request,
-        db: Session = Depends(deps.get_db),
-        cart_id: str,
-
         current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
 ) -> Any:
     """
     Update  cart.
     """
-    cat = crud.cart.get_cart(db, id=current_user.id)
+    cat = crud.cart.get_by_user(db, id=cart_id, user_id=current_user.id)
+    if not cat:
+        raise CustomException(
+            http_code=404,
+            message="The %s  does not exist any cart in the system" % current_user.username
+        )
+    discount = 0
+    if cart_in.discount:
+        discount_id = None
+        for item in cat.product.discount:
+            if item.code == cart_in.discount:
+                discount_id = item.id
+                discount = item.discount
+        if not discount_id:
+            raise CustomException(
+                http_code=404,
+                message="Dont Have Discount Code Like This",
+            )
+        cart_in.discount = discount_id
+    else:
+        cart_in.discount = None
+
+    total = sum_price(product=cat.product.price, discount=discount, quantity=cart_in.quantity)
+    cart_in.sum_price = total
+    cart = crud.cart.update(db, db_obj=cat, obj_in=cart_in)
+    return DataResponse().success_response(request, cart)
+
+
+@router.delete("/{cart_id}")
+def delete_cart(
+        *,
+        request: Request,
+        db: Session = Depends(deps.get_db),
+        cart_id: str,
+        current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
+) -> Any:
+    """
+    Update  cart.
+    """
+    cat = crud.cart.get_by_user(db, id=cart_id, user_id=current_user.id)
     if not cat:
         raise CustomException(
             http_code=404,
             message="The cart does not exist in the system",
         )
-    delete = {
-        "deleted": True
-    }
-    cart = crud.cart.update(db, db_obj=cat, obj_in=delete)
+    crud.cart.remove(db, id=cat.id)
 
     return DataResponse().success_response(request, "Delete Success")
+
+
+

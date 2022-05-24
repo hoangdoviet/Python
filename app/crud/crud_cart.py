@@ -13,17 +13,20 @@ from app.schemas.cart import CartUpdate, CartCreate, CartDelete
 
 class CRUDCart(CRUDBase[DbCart, CartCreate, CartUpdate]):
 
-    def get_cart(self, db: Session, id: Any, product_id: Any) -> Optional[DbCart]:
-        return db.query(DbCart).filter(and_(DbCart.user_id == id, DbCart.product_id == product_id)).all()
+    def get_cart_product(self, db: Session, id: Any, product_id: Any) -> Optional[DbCart]:
+        return db.query(DbCart).filter(and_(DbCart.user_id == id, DbCart.product_id == product_id)).first()
 
-    def create(self, db: Session, *, obj_in: CartCreate, user: DbUser) -> DbCart:
-        print(user.id)
-        print(obj_in.discount)
+
+
+    def create(self, db: Session, *, obj_in: CartCreate, user: DbUser, total:int) -> DbCart:
+
         db_obj = DbCart(
             user_id=user.id,
+            created_by=user.id,
             product_id=obj_in.product,
-            discount=obj_in.discount,
-            quantity=obj_in.quantity
+            discount_id=obj_in.discount,
+            quantity=obj_in.quantity,
+            sum_price=total
         )
 
         db.add(db_obj)
@@ -38,7 +41,7 @@ class CRUDCart(CRUDBase[DbCart, CartCreate, CartUpdate]):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
-        print(db_obj.name)
+
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
     def delete(
