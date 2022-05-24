@@ -3,6 +3,7 @@ from app.models.base import BaseModel
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 
+
 class DbUserProfile(BaseModel):
     first_name = Column(String, default=None)
     middle_name = Column(String, default=None)

@@ -7,3 +7,5 @@ class DbDiscount(BaseModel):
     code = Column(String, index=True)
     discount = Column(INTEGER, index=True)
     product = relationship('DbProduct', secondary='db_product_discount', back_populates="discount")
+    cart = relationship("DbCart", back_populates="discount")
+
