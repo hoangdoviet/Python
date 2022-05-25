@@ -35,17 +35,16 @@ def read_cart(
     """
 
     cart = crud.cart.get_multi_by_user(db, skip=skip, limit=limit, user=current_user)
-    if not cart:
-        raise CustomException(
-            http_code=404,
-            message="%s dont have any cart" % current_user.username
-        )
+
     new_cart = schemas.UserCart
     new_cart.cart = cart
     price = 0
     for item in cart:
         price += item.sum_price
     new_cart.total_price = price
+    last_order = crud.order.get_last_order(db, user_id=current_user.id, limit=2)
+    print(last_order)
+    new_cart.last_order = last_order
     return DataResponse().success_response(request, new_cart)
 
 
@@ -58,10 +57,12 @@ def create_cart(
         current_user: models.DbUser = Depends(deps.get_current_active_user),  # noqa
 
 ) -> Any:
+
     """
     Create new cart.
     """
-    product = crud.product.get(db, id=cart_in.product)
+    print(cart_in.product_id)
+    product = crud.product.get(db, id=cart_in.product_id)
     if not product:
         raise CustomException(
             http_code=404,
@@ -73,23 +74,26 @@ def create_cart(
             message="The %s not enough in the system, just have %d" % (product.name, product.quantity)
         )
     discount = 0
-    if cart_in.discount:
+    print(cart_in.discount_id)
+    if cart_in.discount_id:
         discount_id = None
         for item in product.discount:
-            if item.code == cart_in.discount:
+            if item.code == cart_in.discount_id:
                 discount_id = item.id
                 discount = item.discount
+
         if not discount_id:
             raise CustomException(
                 http_code=404,
                 message="Dont Have Discount Code Like This",
             )
-        cart_in.discount = discount_id
-    else:
-        cart_in.discount = None
-    cart_in.product = product.id
+        cart_in.discount_id = discount_id
 
-    exist_product = crud.cart.get_cart_product(db, id=current_user.id, product_id=cart_in.product)
+    else:
+        cart_in.discount_id = None
+    cart_in.product_id = product.id
+
+    exist_product = crud.cart.get_cart_product(db, id=current_user.id, product_id=cart_in.product_id)
 
     if exist_product:
         # update product//
@@ -104,7 +108,7 @@ def create_cart(
         cart = crud.cart.update(db, db_obj=exist_product, obj_in=cart_in)
     else:
         total = sum_price(product=product.price, discount=discount, quantity=cart_in.quantity)
-        cart = crud.cart.create(db, obj_in=cart_in, user=current_user,total=total)
+        cart = crud.cart.create(db, obj_in=cart_in, user=current_user, total=total)
 
     return DataResponse().success_response(request, cart)
 
@@ -128,10 +132,10 @@ def update_cart(
             message="The %s  does not exist any cart in the system" % current_user.username
         )
     discount = 0
-    if cart_in.discount:
+    if cart_in.discount_id:
         discount_id = None
         for item in cat.product.discount:
-            if item.code == cart_in.discount:
+            if item.code == cart_in.discount_id:
                 discount_id = item.id
                 discount = item.discount
         if not discount_id:
@@ -139,9 +143,9 @@ def update_cart(
                 http_code=404,
                 message="Dont Have Discount Code Like This",
             )
-        cart_in.discount = discount_id
+        cart_in.discount_id = discount_id
     else:
-        cart_in.discount = None
+        cart_in.discount_id = None
 
     total = sum_price(product=cat.product.price, discount=discount, quantity=cart_in.quantity)
     cart_in.sum_price = total

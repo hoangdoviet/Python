@@ -10,3 +10,4 @@ class DiscountProduct(Discount):
 
 class CategoryProduct(Categories):
     product: List[Product] = []
+

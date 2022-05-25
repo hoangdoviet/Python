@@ -61,8 +61,13 @@ def create_product(
     """
 
     category = []
+    if not category_in:
+        raise CustomException(
+            http_code=404,
+            message="Pls add Categories",
+        )
     for item in category_in:
-        cat = crud.categories.get_by_user(db, id=item, user_id=current_user.id)
+        cat = crud.categories.get(db, id=item)
         if not cat:
             raise CustomException(
                 http_code=404,

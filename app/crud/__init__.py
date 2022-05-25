@@ -4,6 +4,7 @@ from .crud_categories import categories
 from .crud_discount import discount
 from .crud_product import product
 from .crud_cart import cart
+from .crud_order import order
 # For a new basic set of CRUD operations you could just do
 
 # from .base import CRUDBase

@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from app import schemas
 
 # Shared properties
-from app.models import DbCategories
 from app.schemas import Categories, Discount
 
 

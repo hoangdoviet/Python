@@ -2,9 +2,8 @@ from typing import Optional, List
 from uuid import UUID
 from pydantic import BaseModel
 
-# from user import UserInDBBase
 # Shared properties
-from app.schemas import Product, Discount
+from app.schemas import Product, Discount, Order
 
 
 class CartBase(BaseModel):
@@ -13,15 +12,15 @@ class CartBase(BaseModel):
 
 # Properties to receive via API on creation
 class CartCreate(CartBase):
-    product: str
-    discount: Optional[str] = None
+    product_id: str
+    discount_id: Optional[str] = None
     quantity: int = 1
     sum_price: Optional[int] = 0
 
 
 # Properties to receive via API on update
 class CartUpdate(CartBase):
-    discount: Optional[str] = None
+    discount_id: Optional[str] = None
     quantity: int = 1
     sum_price: Optional[int] = 0
 
@@ -46,6 +45,7 @@ class Cart(CartInDBBase):
 class UserCart(BaseModel):
     cart: List[Cart] = []
     total_price: int = 1
+    last_order: List[Order] = []
 
     class Config:
         orm_mode = True

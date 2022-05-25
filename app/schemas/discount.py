@@ -2,9 +2,7 @@ from typing import Optional, List
 from uuid import UUID
 from pydantic import BaseModel
 
-# from user import UserInDBBase
 # Shared properties
-from app import schemas
 
 class DiscountBase(BaseModel):
     code: Optional[str] = None

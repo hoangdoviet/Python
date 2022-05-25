@@ -8,4 +8,4 @@ class DbDiscount(BaseModel):
     discount = Column(INTEGER, index=True)
     product = relationship('DbProduct', secondary='db_product_discount', back_populates="discount")
     cart = relationship("DbCart", back_populates="discount")
-
+    order_detail = relationship("DbOrderDetail", back_populates="discount")

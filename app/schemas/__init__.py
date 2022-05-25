@@ -8,6 +8,9 @@ from .discount import Discount, DiscountCreate, DiscountDelete, DiscountUpdate, 
 from .product import Product, ProductCreate, ProductDelete, ProductUpdate, ProductInDBBase, ProductCategories, \
     ProductDiscount
 from .common import CategoryProduct, DiscountProduct
+
+from .order import Order, OrderCreate, OrderUpdate, UserOrder
 from .cart import Cart, CartCreate, CartUpdate, CartInfo, UserCart
+from .order_detail import OrderDetail, UserOrderDetail
 
 
